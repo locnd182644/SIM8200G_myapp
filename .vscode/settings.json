@@ -8,6 +8,8 @@
         "gpscontrol.h": "c",
         "ethcontrol.h": "c",
         "mjson.h": "c",
-        "ltecontrol.h": "c"
+        "ltecontrol.h": "c",
+        "in.h": "c",
+        "errno.h": "c"
     }
 }

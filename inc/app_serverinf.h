@@ -14,15 +14,15 @@
 #include <limits.h>
 
 ////////////////////////////////////////CONSTANTS//////////////////////////////////
-#define SERVER_IP_DEFAULT "192.168.1.24" //"103.229.41.235" //"192.168.1.49" //"192.168.1.23"    //"192.168.1.34"   //"192.168.1.55" //"192.168.137.43"    //"192.168.1.85"        //"103.229.41.235"      //"120.76.100.197"      // "103.199.79.73" //
+#define SERVER_IP_DEFAULT "192.168.1.44" //"103.229.41.235" //"192.168.1.49" //"192.168.1.23"    //"192.168.1.34"   //"192.168.1.55" //"192.168.137.43"    //"192.168.1.85"        //"103.229.41.235"      //"120.76.100.197"      // "103.199.79.73" //
 #define SERVER_PORT_DEFAULT 3022         // 6666          //3022          // 3022               //6666             // 3022         // 6666                //6666                  // 3021                 //10002                 // 9081             //
 
 #define DATA_LEN_MAX 512
 #define IMEI_MAX 100
 
-#define CONNECT_TIME 1000 * 3         // 3 second
+#define CONNECT_TIME 1000 * 2         // 2 second
 #define SEND_DATA_TIME 1000 * 60 * 10 // 10 minute
-#define RECEIVE_TIMEOUT 60            // 60 second
+#define RECEIVE_TIMEOUT 30            // 30 second
 
 /* CONFIG STATUS*/
 #define WIFI_FAILURE "00"

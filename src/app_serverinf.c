@@ -1,5 +1,6 @@
 #include "app_serverinf.h"
 #include "app_timer.h"
+// #include "errno.h"
 #include <netinet/in.h>
 
 #define _WIFI_TEST_
@@ -22,6 +23,7 @@ char g_imei[IMEI_MAX] = {0};
 pthread_t recv_thr_id, send_thr_id;
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static int socketfd;
+static struct sockaddr_in socketaddr;
 
 /* Timer ID of connect_timer */
 timer_t g_connect_timer_id;
@@ -54,7 +56,6 @@ int TCP_connect(char *serverIP, int serverPort)
 		return -1;
 	}
 	// Connect Server:
-	struct sockaddr_in socketaddr;
 	memset(&socketaddr, 0, sizeof(socketaddr));
 	socketaddr.sin_family = AF_INET;
 	socketaddr.sin_port = htons(serverPort);
@@ -63,25 +64,46 @@ int TCP_connect(char *serverIP, int serverPort)
 	{
 #ifdef _TCP_DEBUG_
 		printf("Connect to server fail\n");
+
 #endif
 		// close(socketfd);
 		return -1;
 	}
+
 	return 1;
 }
 void *timer_connect(union sigval v)
 {
-	if (TCP_connect(SERVER_IP_DEFAULT, SERVER_PORT_DEFAULT) == 1)
+	uint8_t ret = TCP_ping();
+
+	if (ret == 0)
 	{
-		printf("\nConnect to server -> success\n");
-		g_connected_tcp_flg = 1;
-		g_connecting_tcp_flg = 0;
-		TCP_ping();
-		// Stop timer connect
-		app_stopTimer(g_connect_timer_id);
+		g_connected_tcp_flg = 0;
+		g_connecting_tcp_flg = 1;
+		memset(&socketaddr, 0, sizeof(socketaddr));
+		socketaddr.sin_family = AF_INET;
+		socketaddr.sin_port = htons(SERVER_PORT_DEFAULT);
+		socketaddr.sin_addr.s_addr = inet_addr(SERVER_IP_DEFAULT);
+		if (connect(socketfd, (struct sockaddr *)&socketaddr, sizeof(socketaddr)) == -1)
+		{
+#ifdef _TCP_DEBUG_
+			printf("Connect to server fail\n");
+			printf("Socket: %d\n", socketfd);
+#endif
+		}
+		else
+		{
+			printf("\nConnect to server -> success\n");
+			g_connected_tcp_flg = 1;
+			g_connecting_tcp_flg = 0;
+		}
 	}
 	else
-		printf("\nConnect to server -> failure\n");
+	{
+		g_connected_tcp_flg = 1;
+		g_connecting_tcp_flg = 0;
+	}
+	return NULL;
 }
 
 /////////////////////////// RECEIVE DATA /////////////////////
@@ -90,11 +112,12 @@ int TCP_receive(void)
 #ifdef _TCP_DEBUG_
 	printf("recv session new\n");
 #endif
-	if (g_connecting_tcp_flg == 1)
-	{
-		printf("\nConnecting to server ... \n");
-		return -1;
-	}
+	// if (g_connecting_tcp_flg == 1)
+	// {
+	// 	printf("\nConnecting to server ... \n");
+
+	// 	return -1;
+	// }
 
 	int length = 0;
 	// Receive data:
@@ -106,6 +129,7 @@ int TCP_receive(void)
 	{
 #ifdef _TCP_DEBUG_
 		printf("\nrecv msg: %s\n", buff);
+
 #endif
 		return 1;
 	}
@@ -113,17 +137,10 @@ int TCP_receive(void)
 	{
 #ifdef _TCP_DEBUG_
 		printf("\nrecv fail data\n");
+
 #endif
 		g_connected_tcp_flg = 0;
 
-#ifdef _TIMER_TEST_
-// Re-Connect Server
-#ifdef _TCP_DEBUG_
-		printf("\nInit Timer_Connect Server -> success\n");
-#endif
-		g_connect_timer_id = app_startTimer(CONNECT_TIME, (timer_ind_cb_fcn)timer_connect);
-		g_connecting_tcp_flg = 1;
-#endif
 		return 0;
 	}
 }
@@ -257,7 +274,7 @@ void *TCP_send_Thr(void *data)
 						g_cfg_flg = 0;
 				}
 			}
-			
+
 			if (g_busy_send_all_tcp_flg == 1)
 			{
 
@@ -616,14 +633,6 @@ uint8_t wifi_set_cfg(void)
 		printf("\n\r-> User configure wifi SUCCESS\n");
 		close(socketfd);
 		g_connected_tcp_flg = 0;
-#ifdef _TIMER_TEST_
-// Re-Connect Server
-#ifdef _TCP_DEBUG_
-		printf("\nInit Timer_Connect Server -> success\n");
-#endif
-		g_connect_timer_id = app_startTimer(CONNECT_TIME, (timer_ind_cb_fcn)timer_connect);
-		g_connecting_tcp_flg = 1;
-#endif
 	}
 	else
 	{
@@ -1277,6 +1286,12 @@ void TCP_init(void)
 	// Create thread:
 	pthread_create(&recv_thr_id, NULL, TCP_receive_Thr, NULL); // Creat thread to receive data
 	pthread_create(&send_thr_id, NULL, TCP_send_Thr, NULL);	   // Creat thread to send data
+
+// Timer check Connect
+#ifdef _TCP_DEBUG_
+	printf("\nInit Timer_Connect Server -> success\n");
+#endif
+	g_connect_timer_id = app_startTimer(CONNECT_TIME, (timer_ind_cb_fcn)timer_connect);
 }
 uint8_t all_data_send(void)
 {
