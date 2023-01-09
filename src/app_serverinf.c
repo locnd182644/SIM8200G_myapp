@@ -1,6 +1,5 @@
 #include "app_serverinf.h"
 #include "app_timer.h"
-// #include "errno.h"
 #include <netinet/in.h>
 
 #define _WIFI_TEST_
@@ -72,7 +71,9 @@ int TCP_connect(char *serverIP, int serverPort)
 }
 void *timer_connect(union sigval v)
 {
-	uint8_t ret = TCP_send("p", 1);
+	memset(json_str, 0, sizeof(json_str));
+	snprintf(json_str, STORE_LINE_SZ, "{\"Imei\":\"%s\",\"FlagConfig\":3}", g_imei);
+	uint8_t ret = TCP_send(json_str, strlen(json_str));
 
 	if (ret == 1)
 	{
@@ -85,6 +86,8 @@ void *timer_connect(union sigval v)
 		if (TCP_connect(SERVER_IP_DEFAULT, SERVER_PORT_DEFAULT) == 1)
 		{
 			TCP_ping();
+			fflush(socketfd);
+			// shutdown(socketfd, SHUT_WR);
 			g_connected_tcp_flg = 1;
 		}
 	}

@@ -44,31 +44,38 @@ void process_simcom_ind_message(simcom_event_e event, void *cb_usr_data)
 int main(int argc, char *argv[])
 {
     // Init SD Card:
+    printf("\n\rinit_sdcard ...\n");
     sdcard_init();
     printf("\n\rinit_sdcard success\n");
 
     // Init AT:
+     printf("\n\rinit_atcommand ...\n");
     atctrl_init();
     printf("\n\rinit_atcommand success\n");
 
     // Init 4G/LTE:
+    printf("\n\rinit_4g ...\n");
     lte4g_init();
     printf("\n\rinit_4g success\n");
 
     // Init Wifi:
-    wifi_init();
-    printf("\n\rinit_wifi success\n");
+    // printf("\n\rinit_wifi ...\n");
+    // wifi_init();
+    // printf("\n\rinit_wifi success\n");
 
     // Init Ethernet:
+    // printf("\n\rinit_ethernet ...\n");
     // ethernet_init();
     // printf("\n\rinit_ethernet success\n");
 
     // Init GPS:
+    // printf("\n\rinit_gps ...\n");
     // gps_init((gps_ind_cb_fcn)process_simcom_ind_message);
-    // // gps_coldstart();
+    // gps_coldstart();
     // printf("\n\rinit_gps success\n");
 
     // Init Led:
+    printf("\n\rinit_gpio ...\n");
     tbox_gpio_init();
     printf("\n\rinit_gpio success\n");
 
