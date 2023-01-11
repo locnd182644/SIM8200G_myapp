@@ -16,6 +16,7 @@
 static char str_temp[AT_LINE_SZ];
 static char buff[100];
 static uint8_t g_wifi_init_flg;
+static MAC_ADDR_INFO_t tmp_mac_info[MAC_ADDR_COUNT];
 ////////////////////////////////////////////LOCAL FUNCTIONS///////////////////////////////
 
 /*****************************************************************************
@@ -1121,59 +1122,71 @@ end_proc:
  * Output        :
  * Return        : 1: Success, 0: Fail
  *****************************************************************************/
+// uint8_t wifi_mac_address_read(uint8_t current_ap)
+// {
+// 	int8_t len = -1;
+// 	char temp[12];
+// 	uint8_t i = 0, j = 0, k = 0;
+// #ifdef _DB_WRITE_
+// 	printf("\n\rwifi_mac_address_read");
+// #endif
+// 	// Set current ap:
+// 	wifi_config_current_ap_write(current_ap);
+
+// 	// Read:
+// 	memset(buff, 0, sizeof(buff));
+// 	memset(str_temp, 0, sizeof(str_temp));
+// 	for (i = 0; i < AT_RETRY_MAX; i++)
+// 	{
+// 		len = sendATCmd((char *)"AT+CWMACADDR?", (char *)"OK", buff, sizeof(buff), AT_TIMEOUT_MAX);
+// 		if (len > 0)
+// 		{
+// 			k = 0;
+// 			for (j = 0; j < len; j++)
+// 			{
+// 				if (buff[j] == ',')
+// 				{
+// 					temp[0] = buff[j + 1];
+// 					temp[1] = buff[j + 2];
+// 					temp[2] = buff[j + 4];
+// 					temp[3] = buff[j + 5];
+// 					temp[4] = buff[j + 7];
+// 					temp[5] = buff[j + 8];
+// 					temp[6] = buff[j + 10];
+// 					temp[7] = buff[j + 11];
+// 					temp[8] = buff[j + 13];
+// 					temp[9] = buff[j + 14];
+// 					temp[10] = buff[j + 16];
+// 					temp[11] = buff[j + 17];
+// 					memcpy(g_wifi_info.wifi[current_ap].mac_info[k].mac_addr, temp, sizeof(temp));
+// 					k++;
+// 				}
+// 			}
+// 			break;
+// 		}
+// 		memset(buff, 0, sizeof(buff));
+// 	}
+
+// #ifdef _DB_READ_i_info.wifi[current_ap].client_count + 1; i++)
+// 	{
+// 	for (i = 0; i < g_wif
+// 		printf("\n\rmac_addr [%u]=%s", i, g_wifi_info.wifi[current_ap].mac_info[i].mac_addr);
+// 	}
+// #endif
+
+// 	return 0;
+// }
+
 uint8_t wifi_mac_address_read(uint8_t current_ap)
 {
-	int8_t len = -1;
-	char temp[12];
-	uint8_t i = 0, j = 0, k = 0;
-#ifdef _DB_WRITE_
-	printf("\n\rwifi_mac_address_read");
-#endif
-	// Set current ap:
-	wifi_config_current_ap_write(current_ap);
-
-	// Read:
+	uint8_t ret = 0;
+	uint8_t index = 0;
 	memset(buff, 0, sizeof(buff));
-	memset(str_temp, 0, sizeof(str_temp));
-	for (i = 0; i < AT_RETRY_MAX; i++)
-	{
-		len = sendATCmd((char *)"AT+CWMACADDR?", (char *)"OK", buff, sizeof(buff), AT_TIMEOUT_MAX);
-		if (len > 0)
-		{
-			k = 0;
-			for (j = 0; j < len; j++)
-			{
-				if (buff[j] == ',')
-				{
-					temp[0] = buff[j + 1];
-					temp[1] = buff[j + 2];
-					temp[2] = buff[j + 4];
-					temp[3] = buff[j + 5];
-					temp[4] = buff[j + 7];
-					temp[5] = buff[j + 8];
-					temp[6] = buff[j + 10];
-					temp[7] = buff[j + 11];
-					temp[8] = buff[j + 13];
-					temp[9] = buff[j + 14];
-					temp[10] = buff[j + 16];
-					temp[11] = buff[j + 17];
-					memcpy(g_wifi_info.wifi[current_ap].mac_info[k].mac_addr, temp, sizeof(temp));
-					k++;
-				}
-			}
-			break;
-		}
-		memset(buff, 0, sizeof(buff));
-	}
-
-#ifdef _DB_READ_
-	for (i = 0; i < g_wifi_info.wifi[current_ap].client_count + 1; i++)
-	{
-		printf("\n\rmac_addr [%u]=%s", i, g_wifi_info.wifi[current_ap].mac_info[i].mac_addr);
-	}
-#endif
-
-	return 0;
+	ret = get_mac_addr(buff, current_ap);
+	index = buff[0] - 48;
+	memcpy(tmp_mac_info[index].mac_addr, &buff[2], MAC_ADDR_MAX);
+	memcpy(g_wifi_info.wifi[current_ap].mac_info, tmp_mac_info, sizeof(tmp_mac_info));
+	return ret;
 }
 
 /*****************************************************************************

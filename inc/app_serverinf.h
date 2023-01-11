@@ -14,7 +14,7 @@
 #include <limits.h>
 
 ////////////////////////////////////////CONSTANTS//////////////////////////////////
-#define SERVER_IP_DEFAULT "192.168.1.28" //"103.229.41.235" //"192.168.1.49" //"192.168.1.23"    //"192.168.1.34"   //"192.168.1.55" //"192.168.137.43"    //"192.168.1.85"        //"103.229.41.235"      //"120.76.100.197"      // "103.199.79.73" //
+#define SERVER_IP_DEFAULT "103.229.41.235" //"103.229.41.235" //"192.168.1.49" //"192.168.1.23"    //"192.168.1.34"   //"192.168.1.55" //"192.168.137.43"    //"192.168.1.85"        //"103.229.41.235"      //"120.76.100.197"      // "103.199.79.73" //
 #define SERVER_PORT_DEFAULT 3022         // 6666          //3022          // 3022               //6666             // 3022         // 6666                //6666                  // 3021                 //10002                 // 9081             //
 
 #define DATA_LEN_MAX 512
@@ -22,7 +22,7 @@
 
 #define CONNECT_TIME 1000 * 3         // 3 second
 #define SEND_DATA_TIME 1000 * 60 * 10 // 10 minute
-#define RECEIVE_TIMEOUT 60            // 30 second
+#define RECEIVE_TIMEOUT 30            // 30 second
 
 /* CONFIG STATUS*/
 #define WIFI_FAILURE "00"
@@ -48,7 +48,8 @@ typedef enum
 {
     ALL = 0,
     FEEDBACK,
-    PING,
+    RECONNECT,
+    UPTIME,
 } DATA_TYPE;
 
 struct check_information
@@ -648,12 +649,14 @@ void json_cfg_wifi_create(void);
 void json_cfg_ethernet_create(void);
 void json_cfg_lte4g_create(void);
 void json_cfg_gps_create(void);
+void json_cfg_uptime_create(void);
 void json_cfg_feedback_create(void);
 
 uint8_t wifi_data_send(void);
 uint8_t lte4g_data_send(void);
 uint8_t ethernet_data_send(void);
 uint8_t gps_data_send(void);
+uint8_t uptime_data_send(void);
 uint8_t feedback_data_send(void);
 uint8_t all_data_send(void);
 
@@ -663,7 +666,7 @@ void gps_handler(void);
 void ethernet_handler(void);
 
 int convert_char_to_int(char);
-int convert_string_to_int(char *);
+static int convert_string_to_int(char *);
 
 
 #endif

@@ -10,6 +10,7 @@
         "mjson.h": "c",
         "ltecontrol.h": "c",
         "in.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "atcontrol.h": "c"
     }
 }

@@ -11,7 +11,7 @@
 #define WIFI_COUNT_MIN							1
 
 // MAC:	
-#define MAC_ADDR_MAX							16
+#define MAC_ADDR_MAX							17
 #define MAC_ADDR_COUNT							16
 
 // WiFi 0 - 5GHz

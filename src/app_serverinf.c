@@ -1,12 +1,13 @@
 #include "app_serverinf.h"
 #include "app_timer.h"
+#include "app_uptime.h"
 #include <netinet/in.h>
 
 #define _WIFI_TEST_
-#define _LTE4G_TEST_
-#define _ETHERNET_TEST_
-#define _GPS_TEST_
-#define _TIMER_TEST_
+// #define _LTE4G_TEST_
+// #define _ETHERNET_TEST_
+// #define _GPS_TEST_
+#define _SEND_TIMER_TEST_
 
 #define _TCP_DEBUG_
 #define _CFG_DEBUG_
@@ -43,9 +44,6 @@ void *TCP_send_Thr(void *);
 /////////////////////////// CONNECT TCP //////////////////////
 int TCP_connect(char *serverIP, int serverPort)
 {
-	// Close socket:
-	close(socketfd);
-
 	// Create Socket:
 	if ((socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1)
 	{
@@ -71,9 +69,7 @@ int TCP_connect(char *serverIP, int serverPort)
 }
 void *timer_connect(union sigval v)
 {
-	memset(json_str, 0, sizeof(json_str));
-	snprintf(json_str, STORE_LINE_SZ, "{\"Imei\":\"%s\",\"FlagConfig\":3}", g_imei);
-	uint8_t ret = TCP_send(json_str, strlen(json_str));
+	uint8_t ret = uptime_data_send();
 
 	if (ret == 1)
 	{
@@ -86,8 +82,6 @@ void *timer_connect(union sigval v)
 		if (TCP_connect(SERVER_IP_DEFAULT, SERVER_PORT_DEFAULT) == 1)
 		{
 			TCP_ping();
-			fflush(socketfd);
-			// shutdown(socketfd, SHUT_WR);
 			g_connected_tcp_flg = 1;
 		}
 	}
@@ -122,7 +116,7 @@ int TCP_receive(void)
 
 #endif
 		g_connected_tcp_flg = 0;
-
+		close(socketfd);
 		return 0;
 	}
 }
@@ -188,14 +182,14 @@ int TCP_send(char *send_data, uint32_t send_len)
 		printf("Send -> fail\n");
 #endif
 		g_connected_tcp_flg = 0;
-
+		close(socketfd);
 		return 0;
 	}
 }
 int TCP_ping()
 {
 	char sbuf[SBUF_SZ];
-	uint8_t data_type = PING;
+	uint8_t data_type = RECONNECT;
 	memset(json_str, 0, sizeof(json_str));
 #ifdef _TCP_DEBUG_
 	printf("\nCreating json Ping data ...\n");
@@ -235,7 +229,7 @@ void *timer_send_data_12h(union sigval v)
 ////////////////////////////////////////// THREAD ////////////////////////////////////
 void *TCP_send_Thr(void *data)
 {
-#ifdef _TIMER_TEST_
+#ifdef _SEND_TIMER_TEST_
 
 #ifdef _TCP_DEBUG_
 	printf("Init Timer_send_data -> success\n");
@@ -247,8 +241,7 @@ void *TCP_send_Thr(void *data)
 
 	while (1)
 	{
-		// pthread_mutex_lock(&mutex);
-		// app_stopTimer(g_connect_timer_id);
+		pthread_mutex_lock(&mutex);
 		if (g_connected_tcp_flg == 1)
 		{
 			if (g_cfg_flg == 1)
@@ -268,9 +261,7 @@ void *TCP_send_Thr(void *data)
 				}
 			}
 		}
-
-		// g_connect_timer_id = app_startTimer(CONNECT_TIME, (timer_ind_cb_fcn)timer_connect);
-		// pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutex);
 	}
 
 	return NULL;
@@ -279,12 +270,10 @@ void *TCP_receive_Thr(void *data)
 {
 	while (1)
 	{
-		// pthread_mutex_lock(&mutex);
 		if (TCP_receive() == 1)
 		{
 			TCP_handler();
 		}
-		// pthread_mutex_unlock(&mutex);
 		sleep(3);
 	}
 	return NULL;
@@ -1185,6 +1174,48 @@ uint8_t gps_data_send(void)
 	return ret;
 }
 
+//////////////////////////// UPTIME /////////////////////////////
+void json_cfg_uptime_create(void)
+{
+	uint8_t data_type = UPTIME;
+	char sbuf[SBUF_SZ];
+#ifdef _TCP_DEBUG_
+	printf("\nCreating json Uptime data ...\n");
+#endif
+	snprintf(json_str, STORE_LINE_SZ, "{\"Imei\":\"%s\",\"FlagConfig\":%u,",
+			 g_imei, data_type);
+	snprintf(sbuf, SBUF_SZ, "\"UpTime\":\"%d\"}", sys_time.uptime); // End.
+	strcat(json_str, sbuf);
+
+	printf("\n\r ---> Uptime_JsonStr= %s\n", json_str);
+}
+uint8_t uptime_data_send(void)
+{
+	uint8_t ret = 0;
+#ifdef _TCP_DEBUG_
+	printf("\n===========UPTIME data_send=============\n");
+#endif
+	uptime_read_all();
+
+#ifdef _TCP_DEBUG_
+	printf("\nUPTIME read all -> success\n");
+#endif
+
+	memset(json_str, 0, sizeof(json_str));
+	json_cfg_uptime_create();
+#ifdef _TCP_DEBUG_
+	printf("\nCreate Uptime Json -> success\n");
+#endif
+
+	ret = TCP_send(json_str, strlen(json_str));
+
+#ifdef _TCP_DEBUG_
+	printf("============================================\n");
+#endif
+
+	return ret;
+}
+
 //////////////////////////// Feedback data /////////////////////////////
 void json_cfg_feedback_create(void)
 {
@@ -1280,18 +1311,29 @@ uint8_t all_data_send(void)
 	uint8_t tmp_ret = 0;
 
 	// Send data to Server:
+#ifdef _WIFI_TEST_
 	tmp_ret = wifi_data_send();
 	ret &= tmp_ret;
 	sleep(1);
+#endif
+
+#ifdef _LTE4G_TEST_
 	tmp_ret = lte4g_data_send();
 	ret &= tmp_ret;
 	sleep(1);
+#endif
+
+#ifdef _ETHERNET_TEST_
 	tmp_ret = ethernet_data_send();
 	ret &= tmp_ret;
 	sleep(1);
+#endif
+
+#ifdef _GPS_TEST_
 	tmp_ret = gps_data_send();
 	ret &= tmp_ret;
 	sleep(1);
+#endif
 
 	fflush(stdout);
 	return ret;
@@ -1303,7 +1345,7 @@ int convert_char_to_int(char c)
 	val += (uint8_t)c - 48;
 	return val;
 }
-int convert_string_to_int(char *str)
+static int convert_string_to_int(char *str)
 {
 	int val = 0;
 	for (uint8_t i = 0; i < strlen(str); i++)

@@ -52,6 +52,7 @@ TEST_OBJS = $(TARGET_OBJ_DIR)/app_wifi.o \
 			$(TARGET_OBJ_DIR)/app_serverinf.o \
 			$(TARGET_OBJ_DIR)/OTAUpgrade.o \
 			$(TARGET_OBJ_DIR)/app_timer.o \
+			$(TARGET_OBJ_DIR)/app_uptime.o \
 			$(TARGET_OBJ_DIR)/http_s.o \
 			$(TARGET_OBJ_DIR)/simcom_common.o \
 			$(TARGET_OBJ_DIR)/mjson.o	\
